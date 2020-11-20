@@ -1,102 +1,50 @@
 package main
 
 import (
-    "encoding/json"
     "github.com/gorilla/mux"
     "log"
     "net/http"
+    "fmt"
+
+    "github.com/plankiton/PagarMeChallenge/util"
+    "github.com/plankiton/PagarMeChallenge/user"
+    "github.com/plankiton/PagarMeChallenge/card"
 )
-
-// "Person type" (tipo um objeto)
-
-type Doc struct {
-    Type      string `json:"type,omitempty"`
-    Value     string `json:"value,omitempty"`
-}
-
-type Person struct {
-    ID        *Doc     `json:"id,omitempty"`
-    Name string        `json:"firstname,omitempty"`
-}
-
-type Card struct {
-    ID        string   `json:"id,omitempty"`
-    Owner     string   `json:"owner,omitempty"`
-    Validate  [2]int   `json:"validate,omitempty"`
-    Number    string   `json:"number,omitempty"`
-    CVV          int   `json:"cvv,omitempty"`
-}
-
-type BuyValue struct {
-
-}
-
-type BuyRequest struct {
-    Token     string    `json:"token,omitempty"`
-    Content   *BuyValue `json:"content,omitempty"`
-    Seller    string    `json:"seller_id,omitempty"`
-    Acquire   string    `json:"acquire_id,omitempty"`
-}
-
-type AcquireBuyRequest struct {
-    Request   *BuyRequest `json:"request,omitempty"`
-    Card      *Card       `json:"card,omitempty"`
-}
-
-var people []Person
-
-// GetPeople mostra todos os contatos da variável people
-func GetPeople(w http.ResponseWriter, r *http.Request) {
-    json.NewEncoder(w).Encode(people)
-}
-
-// GetPerson mostra apenas um contato
-func GetPerson(w http.ResponseWriter, r *http.Request) {
-    params := mux.Vars(r)
-    for _, item := range people {
-        if item.ID.Value == params["id"] {
-            json.NewEncoder(w).Encode(item)
-            return
-        }
-    }
-    json.NewEncoder(w).Encode(&Person{})
-}
-
-// CreatePerson cria um novo contato
-func CreatePerson(w http.ResponseWriter, r *http.Request) {
-    var person Person
-    _ = json.NewDecoder(r.Body).Decode(&person)
-    people = append(people, person)
-    json.NewEncoder(w).Encode(people)
-}
-
-// DeletePerson deleta um contato
-func DeletePerson(w http.ResponseWriter, r *http.Request) {
-    params := mux.Vars(r)
-    for index, item := range people {
-        if item.ID.Value == params["id"] {
-            people = append(people[:index], people[index+1:]...)
-            break
-        }
-        json.NewEncoder(w).Encode(people)
-    }
-}
 
 // função principal para executar a api
 func main() {
     router := mux.NewRouter()
-    people = append(people, Person{
-        ID: &Doc{
-            Type:"id",
-            Value: "1",
+
+    user.AppendPerson(user.Person{
+        Document: &user.Doc{
+            Type: "cpf",
+            Value: "123456789",
         },
         Name: "Joao Da Silva",
     })
 
-    router.HandleFunc("/user", GetPeople).Methods("GET")
-    router.HandleFunc("/user/", CreatePerson).Methods("POST")
-    router.HandleFunc("/user/{id}", DeletePerson).Methods("DELETE")
-    router.HandleFunc("/user/{id}", GetPerson).Methods("GET")
-    log.Output(2, "Routing localhost:8000/user")
+    card.AppendCard(card.Card{
+        ID: fmt.Sprintf("$pagarme$%s$%s$%s$%s",
+           util.Hash("123456789"),
+           util.Hash("Joao Da Silva"),
+           util.Hash("987"),
+           util.Hash("10/32")),
+        Owner: "1",
+        Validate: "10/32",
+        CVV: "987",
+    });
+
+    router.HandleFunc("/card", card.GetCards).Methods("GET")
+    router.HandleFunc("/card", card.CreateCard).Methods("POST")
+    router.HandleFunc("/card/{id}", card.DeleteCard).Methods("DELETE")
+    router.HandleFunc("/card/{id}", card.GetCard).Methods("GET")
+    log.Output(2, "Routing /card - Card operations")
+
+    router.HandleFunc("/user", user.GetPeople).Methods("GET")
+    router.HandleFunc("/user", user.CreatePerson).Methods("POST")
+    router.HandleFunc("/user/{id}", user.DeletePerson).Methods("DELETE")
+    router.HandleFunc("/user/{id}", user.GetPerson).Methods("GET")
+    log.Output(2, "Routing /user - User operations")
+
     log.Fatal(http.ListenAndServe(":8000", router))
 }
