@@ -9,6 +9,7 @@ import (
     "github.com/plankiton/PagarMeChallenge/util"
     "github.com/plankiton/PagarMeChallenge/user"
     "github.com/plankiton/PagarMeChallenge/card"
+    "github.com/plankiton/PagarMeChallenge/proc"
 )
 
 // função principal para executar a api
@@ -16,6 +17,7 @@ func main() {
     router := mux.NewRouter()
 
     user.AppendPerson(user.Person{
+        ID: "1",
         Document: &user.Doc{
             Type: "cpf",
             Value: "123456789",
@@ -30,9 +32,12 @@ func main() {
            util.Hash("987"),
            util.Hash("10/32")),
         Owner: "1",
+        Number: "123456789",
         Validate: "10/32",
         CVV: "987",
     });
+
+    router.HandleFunc("/", processor.Processor).Methods("POST")
 
     router.HandleFunc("/card", card.GetCards).Methods("GET")
     router.HandleFunc("/card", card.CreateCard).Methods("POST")

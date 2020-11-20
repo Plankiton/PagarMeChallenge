@@ -4,7 +4,6 @@ import (
     "encoding/json"
     "github.com/gorilla/mux"
     "net/http"
-    "fmt"
 
     "github.com/plankiton/PagarMeChallenge/util"
 )
@@ -43,7 +42,6 @@ func GetPerson(w http.ResponseWriter, r *http.Request) {
 func CreatePerson(w http.ResponseWriter, r *http.Request) {
     var person Person
     json.NewDecoder(r.Body).Decode(&person)
-    person.ID = fmt.Sprintf("%d", len(people))
 
     for _, item := range people {
         if item.Document.Value == person.Document.Value {
